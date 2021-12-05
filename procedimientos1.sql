@@ -68,7 +68,7 @@ CALL valorNota(0);
 -- 5
 DELIMITER $$
 DROP PROCEDURE IF EXISTS `valorNotaConSalida`$$
-CREATE PROCEDURE valorNotaConSalida(nota NUMERIC, valor VARCHAR(200))
+CREATE PROCEDURE valorNotaConSalida(IN nota NUMERIC, OUT valor VARCHAR(200))
 BEGIN
 	IF nota >= 0 and nota < 5 THEN
 		SET valor = "INSUFICIENTE";
