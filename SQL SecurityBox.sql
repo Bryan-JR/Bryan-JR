@@ -10,18 +10,16 @@ CREATE TABLE ImagenPerfil (
   extension VARCHAR(5)  NULL    ,
 PRIMARY KEY(idImg));
 
-
-
 CREATE TABLE Usuario (
   nDocumento INTEGER UNSIGNED  NOT NULL  ,
-  nombre VARCHAR(100)  NOT NULL  ,
-  apellido VARCHAR(100)  NOT NULL  ,
+  nombre1 VARCHAR(40)  NOT NULL  ,
+  nombre2 VARCHAR(40)  NULL  ,
+  apellido1 VARCHAR(40)  NOT NULL  ,
+  apellido2 VARCHAR(40)  NOT NULL  ,
   tipoDocumento VARCHAR(10)  NOT NULL  ,
   fechaNa DATE  NOT NULL  ,
   genero VARCHAR(10)  NOT NULL    ,
 PRIMARY KEY(nDocumento));
-
-
 
 CREATE TABLE CuentaSB (
   idSB INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
@@ -42,14 +40,6 @@ INDEX CuentaSB_FKIndex2(idImg),
       ON DELETE RESTRICT
       ON UPDATE CASCADE);
 
-CREATE TABLE Actualizacion_CuentaSB (
-  id INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
-  idSB INTEGER UNSIGNED  NOT NULL  ,
-  contraseñaVieja VARCHAR(100)  NOT NULL  ,
-  contraseñaNueva VARCHAR(100)  NOT NULL  ,
-  fecha DATETIME  NOT NULL    ,
-PRIMARY KEY(id));
-
 CREATE TABLE Sitio (
   idsitio INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
   idSB INTEGER UNSIGNED  NOT NULL  ,
@@ -61,8 +51,6 @@ INDEX Sitio_FKIndex1(idSB),
     REFERENCES CuentaSB(idSB)
       ON DELETE RESTRICT
       ON UPDATE CASCADE);
-
-
 
 CREATE TABLE Cuentas (
   idcuenta INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
@@ -81,6 +69,16 @@ INDEX cuentas_FKIndex2(idsitio),
     REFERENCES Sitio(idsitio)
       ON DELETE RESTRICT
       ON UPDATE CASCADE);
+
+
+/*Tablas para triggers*/
+CREATE TABLE Actualizacion_CuentaSB (
+  id INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
+  idSB INTEGER UNSIGNED  NOT NULL  ,
+  contraseñaVieja VARCHAR(100)  NOT NULL  ,
+  contraseñaNueva VARCHAR(100)  NOT NULL  ,
+  fecha DATETIME  NOT NULL    ,
+PRIMARY KEY(id));
       
 CREATE TABLE CuentasEliminadas (
   id INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
@@ -92,102 +90,42 @@ PRIMARY KEY(id));
 
 CREATE TABLE ActualizarCuenta (
   id INTEGER UNSIGNED  NOT NULL   AUTO_INCREMENT,
-  idcuenta INTEGER UNSIGNED  NOT NULL  ,
-  sitioViejo INTEGER UNSIGNED  NOT NULL  ,
-  sitioNuevo INTEGER UNSIGNED  NOT NULL  ,
-  correoViejo VARCHAR(120)  NOT NULL  ,
-  correoNuevo VARCHAR(120)  NOT NULL  ,
-  contraseñaVieja VARCHAR(100)  NOT NULL  ,
-  contraseñaNueva VARCHAR(100)  NOT NULL  ,
-  fecha DATETIME  NOT NULL    ,
+  idcuenta INTEGER UNSIGNED  NOT NULL,
+  sitioViejo INTEGER UNSIGNED  NOT NULL,
+  sitioNuevo INTEGER UNSIGNED  NOT NULL,
+  correoViejo VARCHAR(120)  NOT NULL,
+  correoNuevo VARCHAR(120)  NOT NULL,
+  contraseñaVieja VARCHAR(100)  NOT NULL,
+  contraseñaNueva VARCHAR(100)  NOT NULL,
+  fecha DATETIME  NOT NULL,
 PRIMARY KEY(id));
 
-/*SUBCONSULTAS*/
-SELECT nomUsuario FROM CuentaSB WHERE idSB=1; -- Muestra el usuario de la cuenta;
+/*CONSULTAS*/
+SELECT nomUsuario FROM CuentaSB WHERE idSB=2; -- Muestra el usuario de la cuenta;
 SELECT * FROM Sitio WHERE idSB=1;
-SELECT * FROM Cuentas NATURAL JOIN Sitio WHERE idSB=1; -- Mostrara todas las cuentas de la cuenta iniciada.
-SELECT * FROM Cuentas NATURAL JOIN Sitio WHERE idSB=1 AND idcuenta=1; -- Mostrara info de una sola cuenta.
-SELECT * FROM Cuentas NATURAL JOIN Sitio WHERE idSB=1 AND nombre LIKE "%Face%"; -- filtrar las cuentas por sitio.
 
+/*SUBCONSULTAS*/
+-- 1
+SELECT correoUsuario, contraseña, (SELECT nombre FROM Sitio 
+				WHERE idsitio=c.idsitio) Sitio, 
+            (SELECT url FROM Sitio 
+				WHERE idsitio=c.idsitio) url FROM Cuentas c 
+WHERE idSB=2; -- Mostrara todas las cuentas de la cuenta iniciada.
 
-/*PROCEDIMIENTOS*/
-DELIMITER $$
-DROP PROCEDURE IF EXISTS nuevoRegistro$$
-CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
-  nombreEntrada VARCHAR(100),
-  apellidoEntrada VARCHAR(100),
-  tipoDocumentoEntrada VARCHAR(10),
-  fechaNaEntrada DATE,
-  generoEntrada VARCHAR(10),
-  usuarioEntrada VARCHAR(100),
-  correoEntrada VARCHAR(120),
-  contraseñaEntrada VARCHAR(100)
-  )
-  BEGIN
-  IF verificarCorreo(correoEntrada)=0 THEN
-	IF verificarUsuario(usuarioEntrada)=0 THEN
-		INSERT INTO Usuario(nDocumento, nombre, apellido, tipoDocumento, fechaNa, genero)
-			VALUES
-			(nDocumentoEntrada, nombreEntrada, apellidoEntrada, tipoDocumentoEntrada, fechaNaEntrada, generoEntrada);
-		INSERT INTO CuentaSB(idImg, nDocumento, nomUsuario, correo, contraseña)
-			values
-			(null, nDocumentoEntrada, usuarioEntrada, correoEntrada, contraseñaEntrada);
-		SELECT "Datos guardados";
-	ELSE 
-		SELECT "Usuario existe";
-    END IF;
-ELSE
-	SELECT "Correo Existe";
-END IF;
-END$$
-DELIMITER ;
-CALL nuevoRegistro(1001032253, "brayan", "jimenez", "CC", "2000-12-14", "M", "Bryan14", "brayanjiru14@gmail.com", "qwe..123");
-SELECT * FROM CuentaSB NATURAL JOIN Usuario;
+-- 2
+SELECT correoUsuario, contraseña, (SELECT nombre FROM Sitio 
+				WHERE idsitio=c.idsitio) Sitio, 
+            (SELECT url FROM Sitio 
+				WHERE idsitio=c.idsitio) url FROM Cuentas c
+WHERE idSB=2 AND idcuenta=2; -- Mostrara info de una sola cuenta.
 
-DELIMITER $$
-DROP PROCEDURE IF EXISTS comprobarCuenta $$
-CREATE PROCEDURE comprobarCuenta(entrada VARCHAR(120), entradaContraseña VARCHAR(100))
-BEGIN
-DECLARE cont INT DEFAULT 0;
-DECLARE pass VARCHAR(100);
-SELECT COUNT(*) INTO cont FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
-SELECT contraseña INTO pass FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
-IF cont>0 THEN
-	IF STRCMP(pass,BINARY entradaContraseña)=0 THEN
-		SELECT "iniciado"; -- Si la contraseña es correcta se inicia sesión
-	ELSE
-		SELECT "incorrecta"; -- Si es incorrecta no se inicia
-    END IF;
-ELSE
-	SELECT "no existe"; -- Si el contador es 0, quiere decir que la cuenta no existe 
-END IF;
-END$$
-DELIMITER ;
-CALL comprobarCuenta("brayanjiru14@gmail.com", "qwe..123");
+-- 3
+SELECT correoUsuario, contraseña, (SELECT nombre FROM Sitio 
+				WHERE idsitio=c.idsitio) as sitio, 
+            (SELECT url FROM Sitio 
+				WHERE idsitio=c.idsitio) url FROM Cuentas c
+WHERE idSB=2 AND c.idsitio IN (SELECT idsitio FROM Sitio WHERE nombre LIKE "%Ins%"); -- filtrar las cuentas por sitio.
 
-DELIMITER $$
-DROP PROCEDURE IF EXISTS guardarSitio $$
-CREATE PROCEDURE guardarSitio(IN idEntrada INT,IN nombreSitio VARCHAR(100), IN urlSitio VARCHAR(400))
-BEGIN
-	INSERT INTO Sitio(idSB, nombre, url) VALUES (idEntrada, nombreSitio, urlSitio);
-END $$
-DELIMITER ;
-CALL guardarSitio(1, "Facebook", "www.facebook.com");
-
-DELIMITER $$
-DROP PROCEDURE IF EXISTS guardarCuentas $$
-CREATE PROCEDURE guardarCuentas(
-	IN entradaId INT, 
-	IN correoEntrada VARCHAR(150), 
-	IN contraseñaEntrada VARCHAR(100),
-    IN idSitio INT
-    )
-BEGIN
-    INSERT INTO Cuentas(idsitio, idSB, correoUsuario, contraseña) VALUES (idSitio, entradaId, correoEntrada, contraseñaEntrada);
-END $$
-DELIMITER ;
-CALL guardarCuentas(1, "juan123", "qwe123", 1);
-SELECT * FROM Cuentas NATURAL JOIN Sitio;
 
 /*FUNCIONES*/
 DELIMITER $$
@@ -212,6 +150,88 @@ RETURN contador; -- Si es 0 no esta registra, por lo que se puede registrar
 END$$
 DELIMITER ;
 
+/*PROCEDIMIENTOS*/
+DELIMITER $$
+DROP PROCEDURE IF EXISTS nuevoRegistro$$
+CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
+  nombre1Entrada VARCHAR(40),
+  nombre2Entrada VARCHAR(40),
+  apellido1Entrada VARCHAR(40),
+  apellido2Entrada VARCHAR(40),
+  tipoDocumentoEntrada VARCHAR(10),
+  fechaNaEntrada DATE,
+  generoEntrada VARCHAR(10),
+  usuarioEntrada VARCHAR(100),
+  correoEntrada VARCHAR(120),
+  contraseñaEntrada VARCHAR(100)
+  )
+  BEGIN
+  IF verificarCorreo(correoEntrada)=0 THEN
+	IF verificarUsuario(usuarioEntrada)=0 THEN
+		INSERT INTO Usuario(nDocumento, nombre1, nombre2, apellido1, apellido2, tipoDocumento, fechaNa, genero)
+			VALUES
+			(nDocumentoEntrada, nombre1Entrada, nombre2Entrada, apellido1Entrada, apellido2Entrada, tipoDocumentoEntrada, fechaNaEntrada, generoEntrada);
+		INSERT INTO CuentaSB(idImg, nDocumento, nomUsuario, correo, contraseña)
+			values
+			(null, nDocumentoEntrada, usuarioEntrada, correoEntrada, contraseñaEntrada);
+		SELECT "Datos guardados";
+	ELSE 
+		SELECT "Usuario existe";
+    END IF;
+ELSE
+	SELECT "Correo Existe";
+END IF;
+END$$
+DELIMITER ;
+CALL nuevoRegistro(4324234, "Brayan", "Steven",  "Jimenez", "Ruiz", "CC", "2000-12-14", "M", "Bryan_14", "brayanj@gmail.com", "qwe..123");
+SELECT * FROM CuentaSB NATURAL JOIN Usuario;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS comprobarCuenta $$
+CREATE PROCEDURE comprobarCuenta(entrada VARCHAR(120), entradaContraseña VARCHAR(100))
+BEGIN
+DECLARE cont INT DEFAULT 0;
+DECLARE pass VARCHAR(100);
+SELECT COUNT(*) INTO cont FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
+SELECT contraseña INTO pass FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
+IF cont>0 THEN
+	IF STRCMP(pass,BINARY entradaContraseña)=0 THEN
+		SELECT "iniciado"; -- Si la contraseña es correcta se inicia sesión
+	ELSE
+		SELECT "incorrecta"; -- Si es incorrecta no se inicia
+    END IF;
+ELSE
+	SELECT "no existe"; -- Si el contador es 0, quiere decir que la cuenta no existe 
+END IF;
+END$$
+DELIMITER ;
+CALL comprobarCuenta("brayanj@gmail.com", "qwe..123");
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS guardarSitio $$
+CREATE PROCEDURE guardarSitio(IN idEntrada INT,IN nombreSitio VARCHAR(100), IN urlSitio VARCHAR(400))
+BEGIN
+	INSERT INTO Sitio(idSB, nombre, url) VALUES (idEntrada, nombreSitio, urlSitio);
+END $$
+DELIMITER ;
+CALL guardarSitio(1, "Facebook", "www.Facebook.com");
+SELECT * FROM Sitio;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS guardarCuentas $$
+CREATE PROCEDURE guardarCuentas(
+	IN entradaId INT, 
+	IN correoEntrada VARCHAR(150), 
+	IN contraseñaEntrada VARCHAR(100),
+    IN idSitio INT
+    )
+BEGIN
+    INSERT INTO Cuentas(idsitio, idSB, correoUsuario, contraseña) VALUES (idSitio, entradaId, correoEntrada, contraseñaEntrada);
+END $$
+DELIMITER ;
+CALL guardarCuentas(1, "43534fg@gmail.com", "dsg3454624", 3);
+SELECT * FROM Cuentas NATURAL JOIN Sitio;
+
 /*TRIGGERS-DISPARADORES*/
 DELIMITER $$
 DROP TRIGGER IF EXISTS actualizacionContraseña$$
@@ -224,7 +244,7 @@ BEGIN
         (OLD.idSB, OLD.contraseña, NEW.contraseña, NOW());
 END $$
 DELIMITER ;
-UPDATE CuentaSB SET contraseña="QWE_123" WHERE idSB=1;
+UPDATE CuentaSB SET contraseña="12345" WHERE idSB=1;
 SELECT * FROM CuentaSB;
 SELECT * FROM Actualizacion_CuentaSB;
 
@@ -239,7 +259,7 @@ BEGIN
         (OLD.idcuenta, OLD.idsitio, NEW.idsitio, OLD.correoUsuario, NEW.correoUsuario, OLD.contraseña, NEW.contraseña, NOW());
 END $$
 DELIMITER ;
-UPDATE Cuentas SET idsitio=1, correoUsuario="brayan14@gmail.com", contraseña="123450" WHERE idcuenta=2;
+UPDATE Cuentas SET idsitio=1, correoUsuario="bj@gmail.com", contraseña="qwe123" WHERE idcuenta=8;
 SELECT * FROM Cuentas;
 SELECT * FROM ActualizarCuenta;
 
@@ -255,6 +275,6 @@ BEGIN
 END $$
 DELIMITER ;
 
-DELETE FROM Cuentas WHERE idcuenta=2;
+DELETE FROM Cuentas WHERE idcuenta=8;
 SELECT * FROM Cuentas;
 SELECT * FROM CuentasEliminadas;
