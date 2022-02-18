@@ -110,7 +110,7 @@ SELECT correoUsuario, contraseña, (SELECT nombre FROM Sitio
 				WHERE idsitio=c.idsitio) Sitio, 
             (SELECT url FROM Sitio 
 				WHERE idsitio=c.idsitio) url FROM Cuentas c 
-WHERE idSB=2; -- Mostrara todas las cuentas de la cuenta iniciada.
+WHERE idSB=1; -- Mostrara todas las cuentas de la cuenta iniciada.
 
 -- 2
 SELECT correoUsuario, contraseña, (SELECT nombre FROM Sitio 
@@ -174,38 +174,40 @@ CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
 		INSERT INTO CuentaSB(idImg, nDocumento, nomUsuario, correo, contraseña)
 			values
 			(null, nDocumentoEntrada, usuarioEntrada, correoEntrada, contraseñaEntrada);
-		SELECT "Datos guardados";
+		SELECT "guardado";
 	ELSE 
-		SELECT "Usuario existe";
+		SELECT "usuario existe";
     END IF;
 ELSE
-	SELECT "Correo Existe";
+	SELECT "correo existe";
 END IF;
 END$$
 DELIMITER ;
-CALL nuevoRegistro(4324234, "Brayan", "Steven",  "Jimenez", "Ruiz", "CC", "2000-12-14", "M", "Bryan_14", "brayanj@gmail.com", "qwe..123");
+CALL nuevoRegistro(12345, "Brayan", "Steven",  "Jimenez", "Ruiz", "CC", "2000-12-14", "M", "Brayanjiru14", "brayan14@gmail.com", "qwe123");
 SELECT * FROM CuentaSB NATURAL JOIN Usuario;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS comprobarCuenta $$
 CREATE PROCEDURE comprobarCuenta(entrada VARCHAR(120), entradaContraseña VARCHAR(100))
 BEGIN
+DECLARE id INTEGER;
 DECLARE cont INT DEFAULT 0;
 DECLARE pass VARCHAR(100);
 SELECT COUNT(*) INTO cont FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
 SELECT contraseña INTO pass FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
 IF cont>0 THEN
 	IF STRCMP(pass,BINARY entradaContraseña)=0 THEN
-		SELECT "iniciado"; -- Si la contraseña es correcta se inicia sesión
+		SELECT idSB INTO id FROM CuentaSB WHERE correo=entrada OR nomUsuario=entrada;
+		SELECT id, "iniciado" valor; -- Si la contraseña es correcta se inicia sesión
 	ELSE
-		SELECT "incorrecta"; -- Si es incorrecta no se inicia
+		SELECT "incorrecta" valor; -- Si es incorrecta no se inicia
     END IF;
 ELSE
-	SELECT "no existe"; -- Si el contador es 0, quiere decir que la cuenta no existe 
+	SELECT "no existe" valor; -- Si el contador es 0, quiere decir que la cuenta no existe 
 END IF;
 END$$
 DELIMITER ;
-CALL comprobarCuenta("brayanj@gmail.com", "qwe..123");
+CALL comprobarCuenta("Brayanjiru14", "12345");
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS guardarSitio $$
@@ -244,8 +246,7 @@ BEGIN
         (OLD.idSB, OLD.contraseña, NEW.contraseña, NOW());
 END $$
 DELIMITER ;
-UPDATE CuentaSB SET contraseña="12345" WHERE idSB=1;
-SELECT * FROM CuentaSB;
+UPDATE CuentaSB SET contraseña="12345" WHERE idSB=3;
 SELECT * FROM Actualizacion_CuentaSB;
 
 DELIMITER $$
@@ -259,8 +260,7 @@ BEGIN
         (OLD.idcuenta, OLD.idsitio, NEW.idsitio, OLD.correoUsuario, NEW.correoUsuario, OLD.contraseña, NEW.contraseña, NOW());
 END $$
 DELIMITER ;
-UPDATE Cuentas SET idsitio=1, correoUsuario="bj@gmail.com", contraseña="qwe123" WHERE idcuenta=8;
-SELECT * FROM Cuentas;
+UPDATE Cuentas SET idsitio=1, correoUsuario="bj@gmail.com", contraseña="qwe123" WHERE idcuenta=4;
 SELECT * FROM ActualizarCuenta;
 
 DELIMITER $$
@@ -275,6 +275,5 @@ BEGIN
 END $$
 DELIMITER ;
 
-DELETE FROM Cuentas WHERE idcuenta=8;
-SELECT * FROM Cuentas;
+DELETE FROM Cuentas WHERE idcuenta=4;
 SELECT * FROM CuentasEliminadas;
