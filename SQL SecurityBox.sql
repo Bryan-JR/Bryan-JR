@@ -174,12 +174,12 @@ CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
 		INSERT INTO CuentaSB(idImg, nDocumento, nomUsuario, correo, contraseña)
 			values
 			(null, nDocumentoEntrada, usuarioEntrada, correoEntrada, contraseñaEntrada);
-		SELECT "guardado";
+		SELECT "guardado" valor;
 	ELSE 
-		SELECT "usuario existe";
+		SELECT "usuario existe" valor;
     END IF;
 ELSE
-	SELECT "correo existe";
+	SELECT "correo existe" valor;
 END IF;
 END$$
 DELIMITER ;
