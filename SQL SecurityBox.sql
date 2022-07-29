@@ -11,13 +11,12 @@ PRIMARY KEY(idImg));
 
 CREATE TABLE Usuario (
   nDocumento INTEGER UNSIGNED  NOT NULL  ,
-  nombre1 VARCHAR(40)  NOT NULL  ,
-  nombre2 VARCHAR(40)  NULL  ,
-  apellido1 VARCHAR(40)  NOT NULL  ,
-  apellido2 VARCHAR(40)  NOT NULL  ,
+  nombre VARCHAR(40)  NOT NULL  ,
+  apellido VARCHAR(40)  NOT NULL  ,
   tipoDocumento VARCHAR(10)  NOT NULL  ,
   fechaNa DATE  NOT NULL  ,
-  genero VARCHAR(10)  NOT NULL    ,
+  codPais VARCHAR(10)  NOT NULL    ,
+  celular VARCHAR(20)  NOT NULL    ,
 PRIMARY KEY(nDocumento));
 
 CREATE TABLE CuentaSB (
@@ -156,13 +155,12 @@ DELIMITER ;
 DELIMITER $$
 DROP PROCEDURE IF EXISTS nuevoRegistro$$
 CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
-  nombre1Entrada VARCHAR(40),
-  nombre2Entrada VARCHAR(40),
-  apellido1Entrada VARCHAR(40),
-  apellido2Entrada VARCHAR(40),
+  nombreEntrada VARCHAR(40),
+  apellidoEntrada VARCHAR(40),
   tipoDocumentoEntrada VARCHAR(10),
   fechaNaEntrada DATE,
-  generoEntrada VARCHAR(10),
+  codPaisEntrada VARCHAR(10),
+  celularEntrada VARCHAR(20),
   usuarioEntrada VARCHAR(100),
   correoEntrada VARCHAR(120),
   contraseñaEntrada VARCHAR(100)
@@ -170,9 +168,9 @@ CREATE PROCEDURE nuevoRegistro(nDocumentoEntrada INTEGER,
   BEGIN
   IF verificarCorreo(correoEntrada)=0 THEN
 	IF verificarUsuario(usuarioEntrada)=0 THEN
-		INSERT INTO Usuario(nDocumento, nombre1, nombre2, apellido1, apellido2, tipoDocumento, fechaNa, genero)
+		INSERT INTO Usuario(nDocumento, nombre, apellido, tipoDocumento, fechaNa, codPais, celular)
 			VALUES
-			(nDocumentoEntrada, nombre1Entrada, nombre2Entrada, apellido1Entrada, apellido2Entrada, tipoDocumentoEntrada, fechaNaEntrada, generoEntrada);
+			(nDocumentoEntrada, nombreEntrada, apellidoEntrada, tipoDocumentoEntrada, fechaNaEntrada, codPaisEntrada, celularEntrada);
 		INSERT INTO CuentaSB(idImg, nDocumento, nomUsuario, correo, contraseña)
 			values
 			(null, nDocumentoEntrada, usuarioEntrada, correoEntrada, AES_ENCRYPT(contraseñaEntrada, "superSB"));
@@ -185,8 +183,8 @@ ELSE
 END IF;
 END$$
 DELIMITER ;
-CALL nuevoRegistro(34234,"Brayan","Steven","Jimenez","Ruiz","CC","2000-12-12","M","A1", "DFFGF@gmail.com", "QWE.123");
-SELECT * FROM CuentaSB where contraseña = aes_encrypt("qwe.123", "superSB");
+-- CALL nuevoRegistro(34234,"Brayan","Steven","Jimenez","Ruiz","CC","2000-12-12","M","A1", "DFFGF@gmail.com", "QWE.123");
+-- SELECT * FROM Usuario where contraseña = aes_encrypt("qwe.123", "superSB");
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS comprobarInicio $$
@@ -208,8 +206,8 @@ ELSE
 END IF;
 END$$
 DELIMITER ;
-CALL comprobarInicio("A1", "QWE.123");
-select SHA2(idSB, 224) from CuentaSB;
+-- CALL comprobarInicio("A1", "QWE.123");
+-- select SHA2(idSB, 224) from CuentaSB;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS buscarImg $$
@@ -301,3 +299,6 @@ BEGIN
         (OLD.idcuenta, OLD.correoUsuario, OLD.contraseña, NOW());
 END $$
 DELIMITER ;
+
+SELECT * FROM CuentaSB;
+SELECT * FROM Cuentas;
